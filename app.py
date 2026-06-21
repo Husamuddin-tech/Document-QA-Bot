@@ -1,91 +1,120 @@
+import streamlit as st
+
 from src.rag_pipeline import RAGPipeline
 
 
-def print_welcome():
-
-    print("\n" + "=" * 70)
-    print("📚 Document Q&A Bot (RAG)")
-    print("=" * 70)
-
-    print(
-        "\nAsk questions about your documents."
-    )
-
-    print(
-        "Type 'exit' or 'quit' to stop.\n"
-    )
+st.set_page_config(
+    page_title="Document Q&A Bot",
+    page_icon="📚",
+    layout="wide"
+)
 
 
-def print_sources(sources):
+@st.cache_resource
+def load_pipeline():
+    return RAGPipeline()
 
-    if not sources:
-        return
 
-    print("\nSources:")
+rag = load_pipeline()
 
-    for source in sources:
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-        print(
-            f"- {source['source']} "
-            f"(Page {source['page']})"
+st.title("📚 Document Q&A Bot")
+
+st.markdown(
+    """
+    Ask questions about your document collection using
+    Retrieval-Augmented Generation (RAG).
+    """
+)
+
+question = st.text_input(
+    "Enter your question:",
+    placeholder="What is cloud computing?"
+)
+
+if st.button("Ask Question", type="primary"):
+
+    if not question.strip():
+
+        st.warning(
+            "Please enter a question."
         )
 
+    else:
 
-def main():
+        with st.spinner(
+            "Searching documents..."
+        ):
 
-    print_welcome()
+            response = rag.ask(
+                question
+            )
+        st.session_state.history.append(
+            {
+                "question": question,
+                "answer": response["answer"],
+                "sources": response["sources"]
+            }        )
 
-    rag = RAGPipeline()
+        st.subheader("Answer")
 
-    while True:
+        st.write(
+            response["answer"]
+        )
 
-        try:
+        if response["sources"]:
 
-            question = input(
-                "\n❓ Question: "
-            ).strip()
+            st.subheader("Sources")
 
-            if not question:
-                continue
+            grouped_sources = {}
 
-            if question.lower() in [
-                "exit",
-                "quit",
-                "q"
-            ]:
-                print(
-                    "\n👋 Goodbye!"
+            for source in response["sources"]:
+
+                document = source["source"]
+                page = source["page"]
+
+                if document not in grouped_sources:
+                    grouped_sources[document] = []
+
+                grouped_sources[document].append(page)
+
+            source_data = []
+
+            for document, pages in grouped_sources.items():
+
+                source_data.append(
+                    {
+                        "Document": document,
+                        "Pages": ", ".join(
+                            map(str, sorted(set(pages)))
+                        )
+                    }
                 )
-                break
 
-            response = rag.ask(question)
+            st.table(source_data)
 
-            print("\n" + "=" * 70)
-            print("💡 Answer")
-            print("=" * 70)
-
-            print(
-                response["answer"]
+        else:
+            st.info(
+                "No supporting sources found."
             )
 
-            print_sources(
-                response["sources"]
+if st.session_state.history:
+
+    st.subheader("Recent Questions")
+
+    for item in st.session_state.history[:5]:
+
+        with st.expander(
+            item["question"]
+        ):
+
+            st.write(
+                item["answer"]
             )
+st.divider()
 
-        except KeyboardInterrupt:
-
-            print(
-                "\n\n👋 Goodbye!"
-            )
-
-            break
-
-        except Exception as error:
-
-            print(
-                f"\n❌ Error: {error}"
-            )
-
-
-if __name__ == "__main__":
-    main()
+st.caption(
+    "Built using Sentence Transformers, ChromaDB, Gemini, and Streamlit."
+)
