@@ -1,11 +1,13 @@
 from chromadb import PersistentClient
 
+from src.config import DB_PATH
+
 
 class VectorStore:
 
-    def __init__(self, db_path: str = "db"):
+    def __init__(self):
         self.client = PersistentClient(
-            path=db_path
+            path=DB_PATH
         )
 
     def get_or_create_collection(

@@ -82,10 +82,22 @@ def main():
     store = VectorStore()
 
     collection = (
-        store.get_or_create_collection(
-            COLLECTION_NAME
-        )
+    store.get_or_create_collection(
+        COLLECTION_NAME
     )
+)
+
+    if collection.count() > 0:
+
+        print(
+            "\nCollection already contains data."
+        )
+
+        print(
+            "Skipping indexing."
+        )
+
+        return
 
     ids = [
         str(i)
