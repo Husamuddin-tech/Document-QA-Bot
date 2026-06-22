@@ -30,7 +30,15 @@ class RAGPipeline:
         metadatas = results["metadatas"][0]
         distances = results["distances"][0]
 
+        if not distances:
+            return {
+                "answer": "No documents have been indexed yet.",
+                "sources": []
+            }
+
         best_distance = min(distances)
+
+        
 
         if DEBUG:
             print(
