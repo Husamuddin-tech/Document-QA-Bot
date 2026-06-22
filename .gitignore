@@ -22,3 +22,5 @@ db/
 # IDE
 .vscode/
 .idea/
+
+.streamlit/secrets.toml
